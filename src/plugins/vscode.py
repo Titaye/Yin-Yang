@@ -1,5 +1,6 @@
 import os
 import json
+import re
 import logging
 from os.path import isdir, isfile
 from pathlib import Path
@@ -81,25 +82,29 @@ class Vscode(Plugin):
                     os.path.isfile,
                     (f'{str(Path.home())}/.config/{name}/User/settings.json' for name in possible_editors)):
                 # load the settings
+                # editor = f'{str(Path.home())}/.config/Code - Insiders/User/settings.json'
+                # sett = open(editor, "r")
+                # content = sett.read()
+                # theme = 'Default Dark+'
                 with open(editor, "r") as sett:
-                    try:
-                        settings = json.load(sett)
-                        settings['workbench.colorTheme'] = theme
-                    except json.decoder.JSONDecodeError as e:
-                        # check if the file is completely empty
-                        sett.seek(0)
-                        first_char: str = sett.read(1)
-                        if not first_char:
-                            # file is empty
-                            logger.info('File is empty')
-                            settings = {"workbench.colorTheme": theme}
+                    content = sett.read()
+                    contentOut = content
+                    workbenchMatch = re.search('"workbench.colorTheme"\\s*:\\s*"[^"]+"', content)
+                    if workbenchMatch:
+                        contentOut = re.sub('"workbench.colorTheme"\\s*:\\s*"[^"]+"', f'"workbench.colorTheme": "{theme}"', content)
+                    else:
+                        if content == '' or re.search('{\\s*}', content):
+                            f'{{"workbench.colorTheme": "{theme}"}}'
+                            contentOut = f'{{"workbench.colorTheme": "{theme}"}}'
                         else:
-                            # settings file is malformed
-                            raise e
+                            #re.search('}$', content)
+                            contentOut = re.sub('}$', f',"workbench.colorTheme": "{theme}"}}', content)
+
 
                 # write changed settings into the file
                 with open(editor, 'w') as sett:
-                    json.dump(settings, sett)
+                    sett.write(contentOut)
+
         except StopIteration:
             raise FileNotFoundError('No config file found. '
                                     'If you see this error, try to set a custom theme manually once and try again.')

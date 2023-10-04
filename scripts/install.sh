@@ -14,7 +14,7 @@ echo "Uninstalling old version, if it exists"
 ./scripts/uninstall.sh
 
 echo "Installing dependencies …"
-pip3 install -r requirements.txt
+#pip3 install -r requirements.txt
 echo "Installing yin yang"
 #check if /opt/ directory exists else create
 if [ ! -d /opt/ ]; then
